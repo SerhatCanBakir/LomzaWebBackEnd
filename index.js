@@ -56,6 +56,14 @@ app.post('/register',async (req, res) => {
 
 })
 
+app.get('/joinchat',(req,res)=>{
+
+});
+
+
+app.post('/addFriend',(req,res)=>{
+    
+})
 io.on('connection', (socket) => {
     console.log(socket.id);
 
@@ -63,13 +71,15 @@ io.on('connection', (socket) => {
         socket.join(chatid);
     })
 
-    socket.on('message-send', (chatId, sender, text) => {
+    socket.on('message-send', async(chatId, sender, text) => {
         socket.to(chatId).emit('message-get', (sender, text));
+       let a =await  DB.textMessageSave(chatId,sender,text);
 
     })
 
-    socket.on('get-all', (ChatId) => {
-
+    socket.on('get-all', async(ChatId) => {
+      let a = await DB.getAllMessage(ChatId);
+        socket.emit('send-all',a);
     })
 
 })

@@ -22,6 +22,7 @@ username:String,
 email:String,
 password:String,
 stat:String,
+friendsId:[Number],
 })
 
 const textMessageSchema = new mongoose.Schema({
@@ -57,6 +58,7 @@ const register = async(mail,username,pass)=>{
     username:username,
     password:pass,
     stat:"avalible",
+    friendsId:[],
    })
    
    let a = await NewUser.save();
