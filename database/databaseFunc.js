@@ -17,7 +17,7 @@ async function main() {
 
 
 const userSchema = new  mongoose.Schema({
-userid:Number,
+userid:String,
 username:String,
 email:String,
 password:String,
@@ -26,6 +26,7 @@ friendsId:[Number],
 })
 
 const textMessageSchema = new mongoose.Schema({
+    senderId:String,
     sender:String,
     sendTime:Date,
     content:String
@@ -39,7 +40,8 @@ const userModel =  mongoose.model('user',userSchema);
 
 const  login = async(mail,pass)=> {
     let a = await userModel.findOne({email:mail});
-    if(a==null){
+    console.log("login Find:"+a);
+    if(a===null){
 return null;
     }else if(a.password!=pass){
      return false;
@@ -49,7 +51,8 @@ return null;
 }
 
 const register = async(mail,username,pass)=>{
-   const log = login(mail,pass);
+   const log =await login(mail,pass);
+   console.log("register login :"+log);
    if(log==null){
   let count = await userModel.countDocuments();
    const NewUser = new userModel({
@@ -60,8 +63,9 @@ const register = async(mail,username,pass)=>{
     stat:"avalible",
     friendsId:[],
    })
-   
+   console.log('kullanıcı kaydedildi');
    let a = await NewUser.save();
+   console.log('kullanıcı :' +a);
     return a
    }else{
     return false;
@@ -69,14 +73,23 @@ const register = async(mail,username,pass)=>{
 }
 
 const textMessageSave=async (chatId,sender,text)=>{
-    const textMessageModel = mongoose.model(chatId,textMessageSchema);
+    if(typeof chatId ==="string"){
+        console.log(chatId+sender+text);
+    const textMessageModel = await mongoose.model(chatId,textMessageSchema);
     const NewMessage = new textMessageModel({
-        sender:sender,
+        senderId:sender.id,
+        sender:sender.username,
         sendTime:Date(),
         content:text,
     })
    let a = await NewMessage.save();
+   
+   console.log('mesaj kayıtli =\n'+a);
    return a ;
+}else{
+    return null;
+}
+ 
 }
 
 const getAllMessage = async(chatId)=>{
@@ -90,6 +103,9 @@ let a = await userModel.updateOne({id:userID},{$set:{stat:Stat}});
 return a ;
 }
 
+const addRoomToUser = (chatId,userId)=>{
+    
+}
 
 module.exports={
     login,
