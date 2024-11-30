@@ -5,7 +5,9 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const JWT = require('jsonwebtoken');
 const bodyParser = require("body-parser");
-
+const cookieParser = require('cookie-parser');
+const KEY = "7e702CCBEDU2gqt8qRfXtp6m6ht0Mhie";
+import { acceptFriendReq, createFriendReq, declineFriendReq, GetAllFriend, GetAllFriendReq, Login, Register } from "./database/databaseFunc.js"
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -13,98 +15,121 @@ const io = new Server(server, {
     },
 
 });
-const DB = require('./database/databaseFunc.js');
 
-
-const KEY = "7e702CCBEDU2gqt8qRfXtp6m6ht0Mhie";
-
+app.use(cookieParser());
 app.use(bodyParser.json());
 
-app.post('/login', async (req, res) => {
-   console.log("login calisti");
-   console.log(req.body);
-    let email = req.body.email;
-    let password = req.body.password;
-    console.log("mail:"+email+"\npass:"+password);
+const tokenBaseOuth = (req, res, next) => {
+    const token = req.cookies.token;
+    console.log(token);
 
-    if(email == null || password == null || email == undefined || password == undefined) {
-        res.sendStatus(400);
-        return
-    }
-    let data = await DB.login(email, password);
-    console.log("data:"+data)
-    if (data != false && data != null) {
-        
-        let id = data.id;
-        let name = data.username;
-        
-        let token = JWT.sign(data.toJSON(), KEY);
-        res.status(202).send({ id: id, username: name, token: token });
-        return
-    } else if (data != false && data == null) {
-        res.sendStatus(204);
-        return;
+    if (token != null) {
+        let data = JWT.verify(token, KEY);
+        req.userdata = data;
+        next();
     } else {
-        res.sendStatus(403);
-        return;
+        res.status(401).send('token unotherized');
     }
+}
+
+
+
+
+app.post('/login', async (req, res) => {
+    const mail = req.body.email;
+    const pass = req.body.password;
+    if (!(mail && pass)) {
+        res.sendStatus(400)
+    }
+    try {
+        const userObject = await Login(mail, pass)
+        if (userObject) {
+            const userToken = JWT.sign(userObject, KEY, { expiresIn: 60 * 60 * 60 });
+            res.status(202).json({ token: userToken, id: userObject._id, username: userObject.username })
+        } else {
+            res.sendStatus(204)
+        }
+    } catch { res.sendStatus(500) };
+
 })
 
-app.post('/register',async (req, res) => {
-    console.log("register calisti");
-    console.log(req.body);
-    let mail = req.body.email;
-    let username = req.body.username;
-    let pass = req.body.password;
-    console.log("mail:"+mail+"\nusername:"+username+"\npassword:"+pass);
-    if (mail == null || mail == undefined || username == null || username == undefined || pass == null || pass == undefined) {
+app.post('/register', async (req, res) => {
+    const mail = req.body.email;
+    const username = req.body.username;
+    const password = req.body.password;
+    if (!(mail && username && password)) {
         res.sendStatus(400);
-        return;
     }
-    
-    let temp  = await DB.register(mail,username,pass);
-    if(temp!=false){
-        res.sendStatus(201);
-        return;
-    } else{
-        
+
+    const RegStatus = await Register(mail, username, password);
+    if (RegStatus) {
+        res.sendStatus(201)
+    } else {
         res.sendStatus(406);
-        return;
     }
+})
+
+app.post('/groups/creategroup',tokenBaseOuth,async(req,res)=>{
 
 })
 
-app.get('/joinchat',(req,res)=>{
+app.post('/groups/:groupId/addmember', tokenBaseOuth,async (req, res) => {
 
-});
-
-
-app.post('/addFriend',(req,res)=>{
-    
 })
+
+app.post('/groups/:groupId/removemember', tokenBaseOuth,async (req, res) => {
+
+})
+
+app.get('/friendrequest', tokenBaseOuth, async (req, res) => {
+    const id = req.userdata.id;
+    const requests = await GetAllFriendReq(id);
+    if (requests) { res.status(200).json(requests); }
+    res.sendStatus(500);
+})
+
+app.get('/friends', tokenBaseOuth, async (req, res) => {
+    const id = req.userdata.id;
+    const friends = await GetAllFriend(id);
+    if (friends) {
+        res.status(200).json(friends)
+    }
+    res.sendStatus(500);
+})
+
+app.post('/addfriend', tokenBaseOuth, async (req, res) => {
+    const friendId = req.body.friendId;
+    const userId = req.userdata.id;
+    if (!(friendId && userId)) {
+        res.sendStatus(400);
+    }
+    const requestStatus = await createFriendReq(friendId, userId);
+    if (requestStatus) {
+        res.sendStatus(201);
+    }
+    res.sendStatus(500);
+})
+
+app.post('/friendrequests/:id/accept', tokenBaseOuth, async (req, res) => {
+    const id = req.params.id;
+    const AcceptReq = await acceptFriendReq(id);
+    if (AcceptReq) {
+        res.sendStatus(200);
+    }
+    res.sendStatus(400);
+})
+
+app.post('/friendrequests/:id/decline', tokenBaseOuth,async (req, res) => {
+    const id = req.params.id;
+    const AcceptReq = await declineFriendReq(id);
+    if (AcceptReq) {
+        res.sendStatus(200);
+    }
+    res.sendStatus(400);
+})
+
+
 io.on('connection', (socket) => {
-    console.log("socket id="+socket.id);
-
-    socket.on('room-switch', (chatid) => {
-        console.log('socket katıldı :' +socket.id+"\nchat : "+chatid);
-        socket.join(chatid);
-    })
-
-    socket.on('message-send', async(object) => {
-        io.to(object.chatId).emit('message-get', object);
-        console.log(object);
-       let a =await  DB.textMessageSave(object.chatId,object.Sender,object.content);
-       if(a===null){
-        io.to(object.chatId).emit('error','server-error');
-       }
-
-    })
-
-    socket.on('get-all', async(ChatId) => {
-      console.log('socket butun mesajları aldı : '+socket.id+"\noda : "+ChatId);
-      let a = await DB.getAllMessage(ChatId);
-        socket.emit('send-all',a);
-    })
 
 })
 
@@ -115,6 +140,6 @@ io.on('disconnect', (socket) => {
 
 
 
-server.listen(433,'10.38.56.172', () => {
+server.listen(433, '10.38.56.172', () => {
     console.log('server open');
 })

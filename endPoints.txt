@@ -1,0 +1,61 @@
+http://10.38.56.172:433/groups/${groupId}/addmember
+ method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: selectedFriend }),
+    
+
+`http://10.38.56.172:433/groups/${groupId}/removemember`
+ method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: removalMember }),
+
+
+      http://10.38.56.172:433/joinchat/'+userid
+      method:"POST",
+      headers:{'content-Type':"application/json"},
+      body:JSON.stringify{token:getCookie('token')}
+
+http://10.38.56.172:433/friendrequests
+method : GET
+
+
+http://10.38.56.172:433/friends
+method : GET
+
+http://10.38.56.172:433/addfriend
+ method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId })
+
+
+http://10.38.56.172:433/friendrequests/${id}/accept` 
+      method: 'POST'
+
+
+http://10.38.56.172:433/friendrequests/${id}/decline 
+      method: 'POST'
+
+http://10.38.56.172:433/creategroup', 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupName, members: selectedFriends })
+
+http://10.38.56.172:433/getrooms/" + getCookie("id") 
+
+http://10.38.56.172:433/login', 
+            method: "POST",
+            headers: { 'Content-Type': "application/json" },
+            body: JSON.stringify({ email: LoginText, password: LoginPassword })
+
+
+  http://10.38.56.172:433/register', 
+            method: "POST",
+            headers: { 'Content-Type': "application/json" },
+            body: JSON.stringify({ email: RegMail, username: RegUsername, password: RegPass })         
+
+   http://localhost:3000/get-user/${userId}
+   method : GET
+
+http://localhost:3000/update-user/${userId}
+method: POST
+body:formData,
