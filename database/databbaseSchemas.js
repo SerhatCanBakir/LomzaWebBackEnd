@@ -3,7 +3,8 @@ const { default: mongoose } = require("mongoose");
 const chatSchema = new mongoose.Schema({
     group: Boolean,
     name:String,
-    id: String,
+    chatId: String,
+
 })
 
 const userSchema = new mongoose.Schema({
@@ -16,16 +17,17 @@ const userSchema = new mongoose.Schema({
 })
 
 const messageSchema = new mongoose.Schema({
-    sender: { type: String },
+    senderId:{type:String},
+    senderName: { type: String },
     isPhoto: { type: Boolean },
     content: { type: mongoose.Schema.Types.Mixed },
     sendTime: { type: Date },
 })
 
 messageSchema.path('content').validate(function (value) {
-    if (this.isPhoto === 1) {
+    if (this.isPhoto === true) {
         return Buffer.isBuffer(value)
-    } else if (this.isPhoto === 0) {
+    } else if (this.isPhoto === false) {
         return typeof value === 'string'
     }
     return false
@@ -34,12 +36,14 @@ messageSchema.path('content').validate(function (value) {
 
 const roomSchema = new mongoose.Schema({
     roomName: { type: String },
+    roomId:{type:String},
     users: { type: [String] },
 })
 
 const friendrequestSchema = mongoose.Schema({
-    sender: String,
-    recever: String,
+    senderId: String,
+    senderName: String,
+    receverId: String,
     SendTime: Date
 });
 
@@ -48,8 +52,7 @@ userSchema.index({ email: 1 }, { unique: true });
 roomSchema.index({ roomId: 1 }, { unique: true });
 
 const userModel = mongoose.model('user', userSchema);
-
-const roomModel = mongoose.model('room', roomSchema);
+const roomModel = mongoose.model('room',roomSchema);
 
 const friendrequestModel = mongoose.model('FriendRequest', friendrequestSchema);
 module.exports = {

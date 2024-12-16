@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { roomModel, userModel, messageSchema, friendrequestModel, chatSchema } = require('./databbaseSchemas');
+
+const { userModel, messageSchema, friendrequestModel, chatSchema, roomModel } = require('./databbaseSchemas');
+const e = require('express');
 dotenv.config();
 
 
@@ -71,26 +73,45 @@ const Register = async (mail, username, pass) => {
 /**
  * 
  * @param {string} chatId 
- * @param {string} senderName 
+ * @param {Object} senderName 
  * @param {boolean} isPhoto 
  * @param {Buffer||String} content 
  * @returns {Boolean}
  */
 const saveMessage = async (chatId, senderName, isPhoto, content) => {
     try {
-        const messageModel = mongoose.model(chatId, messageSchema);
+        console.log('Message save function is called.');
+
+        const senderId = senderName.userid;
+        const senderUsername = senderName.username;
+
+        // Dinamik olarak Mongoose modeli seç veya oluştur
+        const messageModel =
+            mongoose.models[chatId] || mongoose.model(chatId, messageSchema);
+
+        // Eğer fotoğraf ise, content'i base64'ten Buffer'a dönüştür
+        const processedContent = isPhoto ? Buffer.from(content, 'base64') : content;
+
+        // Yeni mesaj nesnesi oluştur
         const NewMessage = new messageModel({
-            sender: senderName,
+            senderId: senderId,
+            senderName: senderUsername,
             isPhoto: isPhoto,
-            content: content,
-            sendTime: Date(),
-        })
-        await NewMessage.save();
+            content: processedContent,
+            sendTime: new Date(),
+        });
+
+        // Mesajı veritabanına kaydet
+        const savedMessage = await NewMessage.save();
+        console.log('Message saved:', savedMessage);
+
         return true;
-    } catch {
-        return false
+    } catch (error) {
+        console.error('Error while saving message:', error);
+        return false;
     }
-}
+};
+
 /**
  * 
  * @param {String} chatId 
@@ -112,19 +133,21 @@ const getChatMessages = async (chatId) => {
 /**
  * 
  * @param {String} sender 
+ * @param {String} senderName 
  * @param {String} recever
  * @returns {Boolean} 
  */
 
-const createFriendReq = async (sender, recever) => {
+const createFriendReq = async (senderId, senderName, recever) => {
     try {
-        const request = await friendrequestModel.findOne({ sender, recever });
+        const request = await friendrequestModel.findOne({ senderId, recever });
         if (request) {
             return false; // Zaten bir istek mevcut
         }
         const NewRequest = new friendrequestModel({
-            sender,
-            recever,
+            senderId: senderId,
+            senderName: senderName,
+            receverId: recever,
             sendTime: new Date(),
         });
         await NewRequest.save();
@@ -145,10 +168,14 @@ const createFriendReq = async (sender, recever) => {
 const acceptFriendReq = async (reqId) => {
     try {
         const docs = await friendrequestModel.findByIdAndDelete(reqId);
-        const username = await userModel.findById(docs.sender);
+        console.log('docs : ' + docs);
+        const username = await userModel.findById(docs.senderId);
+        console.log('AFQ username' + username);
         if (docs) {
-            const chatId = `${docs.sender}+${docs.recever}`;
-            await addChatTOUser(username.username,docs.recever, chatId, false);
+            const chatId = `${docs.senderId}+${docs.receverId}`;
+            await addChatTOUser(username.username, docs.receverId, chatId, false);
+            const recevername = await userModel.findById(docs.receverId).select('username');
+            await addChatTOUser(recevername.username, username.id, chatId, false);
             return true;
         }
         return false;
@@ -176,6 +203,7 @@ const declineFriendReq = async (reqId) => {
 };
 
 
+
 /**
  * @param  {String} name --group or user name 
  * @param {String} userId 
@@ -185,13 +213,15 @@ const declineFriendReq = async (reqId) => {
  */
 
 const addChatTOUser = async (name, userId, chatId, chatType) => {
+    console.log('addChatToUser çalıştı ')
     try {
-        const ChatDTO = { group: chatType, id: chatId, name: name };
+        const ChatDTO = { group: chatType, chatId: chatId, name: name };
         const data = await userModel.findByIdAndUpdate(
             userId,
             { $push: { chats: ChatDTO } },
             { new: true }
         );
+        console.log('AddChatToUser Değeri' + data);
         return !!data; // Güncelleme başarılıysa `true`, değilse `false`
     } catch (err) {
         console.error(err);
@@ -199,9 +229,15 @@ const addChatTOUser = async (name, userId, chatId, chatType) => {
     }
 };
 
+
+/**
+ * 
+ * @param {String} id 
+ * @returns {Object||boolean} 
+ */
 const GetAllFriendReq = async (id) => {
     try {
-        const data = await friendrequestModel.find({ recever: id.toString() });
+        const data = await friendrequestModel.find({ receverId: id.toString() });
         console.log(data);
         if (Array.isArray(data)) {
             return data
@@ -213,6 +249,11 @@ const GetAllFriendReq = async (id) => {
     }
 };
 
+/**
+ * 
+ * @param {String} id 
+ * @returns {[Object||Boolean]}
+ */
 const GetAllFriend = async (id) => {
     try {
         const data = await userModel.findById(id).select("chats");
@@ -223,29 +264,67 @@ const GetAllFriend = async (id) => {
     }
 };
 
+/**
+ * 
+ * @param {String} groupName 
+ * @param {[String]} users 
+ * @returns {boolean} 
+ */
 
 const CreateGroup = async (groupName, users) => {
+    console.log('grup name : ' + groupName + '\n users' + users)
     try {
+        const groupId = require('crypto').randomBytes(32).toString('hex');
         const NewRoom = new roomModel({
+            roomId: groupId,
             roomName: groupName,
             users: users,
-        });
-        const oda = await NewRoom.save();
+        })
+        users.forEach(user => {
+            addChatTOUser(groupName, user, groupId, 1);
+        })
+        await NewRoom.save();
+        return true
 
-        for (const element of users) {
-            await addChatTOUser(groupName,element.id, oda.id, 1);
-        }
 
-        return true;
     } catch (error) {
         console.error(error);
         return false;
     }
 };
 
+const TakeGroupMembers = async (id) => {
+    try {
+        console.log('id : ' + id);
+        const users = await roomModel.find({ roomId: id }).select('users');
+
+        if (Array.isArray(users[0].users)) {
+            // Her kullanıcı ID'si için findById yapan Promise'lar oluşturulur
+            const promises = users[0].users.map((element) => userModel.findById(element));
+
+            // Tüm Promise'lar tamamlandığında sonuçları data'ya alırız
+            const data = await Promise.all(promises);
+
+            console.log('beklenen dönen data : ', data);
+            return data;
+        }
+        return false;
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
+}
+
+
+/**
+ * 
+ * @param {String} chatId 
+ * @param {String} userId 
+ * @returns 
+ */
 const RemoveChatToUser = async (userId, chatId) => {
     try {
-        await userModel.findByIdAndUpdate(userId, { $pull: { chats: { id: chatId } } });
+        await userModel.findByIdAndUpdate(userId, { $pull: { chats: { chatId: chatId } } });
         return true;
     } catch (error) {
         console.error(error);
@@ -253,22 +332,40 @@ const RemoveChatToUser = async (userId, chatId) => {
     }
 };
 
-
+/**
+ * 
+ * @param {String} userId 
+ * @param {String} chatId 
+ * @returns 
+ */
 const RemoveUserToChat = async (userId, chatId) => {
     try {
-        await roomModel.findByIdAndUpdate(chatId, { $pull: { users: userId } });
-
-        const isRemoved = await RemoveChatToUser(userId, chatId);
-        if (!isRemoved) {
-            throw new Error('Failed to remove chat from user');
+        const a = await roomModel.findOneAndUpdate({ roomId: chatId }, { $pull: { users: userId } });
+        await RemoveChatToUser(userId, chatId);
+        if (a) {
+            return true
         }
-
-        return true;
     } catch (error) {
         console.error(error);
         return false;
     }
 };
+
+
+const addUserToChat = async (userId, groupId) => {
+    console.log('addUserToChat userId:' + userId + '\ngroup Id : ' + groupId);
+    try {
+        const a = await roomModel.findOneAndUpdate({ roomId: groupId }, { $push: { users: userId } });
+        console.log('a : '+a);
+        const b = await addChatTOUser(a.roomName, userId, a.roomId, 1);
+        if (a && b) { return true }
+        return false
+    } catch (err) { 
+
+        console.log(err)
+        return false
+    }
+}
 
 
 module.exports = {
@@ -280,5 +377,10 @@ module.exports = {
     CreateGroup,
     GetAllFriend,
     GetAllFriendReq,
-    RemoveUserToChat
+    RemoveUserToChat,
+    getChatMessages,
+    saveMessage,
+    TakeGroupMembers,
+    addChatTOUser,
+    addUserToChat
 }
