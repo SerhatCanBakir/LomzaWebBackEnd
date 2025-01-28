@@ -67,7 +67,7 @@ This project is a **real-time chat application** built with modern web technolog
 Create a `.env` file in the root directory with the following keys:
 ```
 DB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
+YOUR_SECRET=your_jwt_secret_key
 ```
 
 ---
@@ -105,5 +105,5 @@ JWT_SECRET=your_jwt_secret_key
 
 If you have any questions or suggestions, feel free to reach out:
 
-- GitHub: [your-username](https://github.com/your-username)
-- Email: [your-email@example.com](mailto:your-email@example.com)
+- GitHub: [SerhatcanBakir](https://github.com/SerhatCanBakir)
+- Email: [serhat2534serhat@outlook.com](mailto:serhat2534serhat@outlook.com)
