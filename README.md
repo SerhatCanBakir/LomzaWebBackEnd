@@ -62,7 +62,7 @@ This project is a **real-time chat application** built with modern web technolog
 
 ---
 
-## \ud83d\udd11 Environment Variables
+##  Environment Variables
 
 Create a `.env` file in the root directory with the following keys:
 ```
@@ -96,7 +96,7 @@ JWT_SECRET=your_jwt_secret_key
 
 5. Open the application at:
    - **Frontend**: [http://localhost:3000](http://localhost:3000)
-   **you can find frontend side at that link [Lomza-web-fronted](https://github.com/SerhatCanBakir/Lomza-Web-FrontEnd)
+   -**you can find frontend side at that link** [Lomza-web-fronted](https://github.com/SerhatCanBakir/Lomza-Web-FrontEnd)
    - **Backend**: [http://localhost:433](http://localhost:433)
 
 ---
