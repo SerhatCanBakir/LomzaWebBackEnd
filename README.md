@@ -1,10 +1,10 @@
-# \ud83d\udce1 Real-Time Chat Application
+###  Real-Time Chat Application
 
 This project is a **real-time chat application** built with modern web technologies, providing features like user authentication, group chats, friend requests, and real-time messaging. It uses **Socket.IO** for real-time communication and **MongoDB** for database management.
 
 ---
 
-## \ud83d\ude80 Features
+##  Features
 
 - **User Authentication**: Login and register functionality with JWT-based authentication.
 - **Real-Time Messaging**: Instant chat updates using WebSocket communication.
@@ -16,7 +16,7 @@ This project is a **real-time chat application** built with modern web technolog
 
 ---
 
-## \ud83d\udd20 Technologies Used
+##  Technologies Used
 
 - **Node.js**: Backend runtime environment.
 - **Express.js**: Web framework for building RESTful APIs.
@@ -27,7 +27,7 @@ This project is a **real-time chat application** built with modern web technolog
 
 ---
 
-## \ud83d\udd02 Project Structure
+##  Project Structure
 
 ### Models
 1. **User Schema**:
@@ -73,7 +73,7 @@ JWT_SECRET=your_jwt_secret_key
 
 ---
 
-## \ud83c\udfc3 How to Run the Project
+## How to Run the Project
 
 1. Clone the repository:
    ```bash
@@ -102,7 +102,7 @@ JWT_SECRET=your_jwt_secret_key
 ---
 
 
-## \ud83d\udce7 Contact
+##  Contact
 
 If you have any questions or suggestions, feel free to reach out:
 
