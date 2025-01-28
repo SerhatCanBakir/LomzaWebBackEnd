@@ -66,7 +66,6 @@ This project is a **real-time chat application** built with modern web technolog
 
 Create a `.env` file in the root directory with the following keys:
 ```
-PORT=433
 DB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 ```
