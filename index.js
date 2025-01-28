@@ -6,7 +6,10 @@ const { Server } = require('socket.io');
 const JWT = require('jsonwebtoken');
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const KEY = "7e702CCBEDU2gqt8qRfXtp6m6ht0Mhie";
+const dotenv = require('dotenv');
+const path = require('path');
+dotenv.config({path:path.resolve(__dirname,"./database/.env")});
+const KEY = process.env.YOUR_SECRET;
 const cors = require('cors');
 const { acceptFriendReq, createFriendReq, CreateGroup, declineFriendReq, GetAllFriend, GetAllFriendReq, Login, Register, RemoveUserToChat, getChatMessages, saveMessage, TakeGroupMembers, addUserToChat } = require("./database/databaseFunc.js");
 
